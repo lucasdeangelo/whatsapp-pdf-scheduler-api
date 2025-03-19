@@ -1,0 +1,26 @@
+# Diretórios
+node_modules/
+.wwebjs_auth/
+.wwebjs_cache/
+dist/
+coverage/
+.DS_Store
+
+# Arquivos de ambiente
+.env
+.env.local
+.env*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema
+Thumbs.db

@@ -1,0 +1,7 @@
+{
+    "schedule": {
+      "time": "*/2 * * * *", 
+      "groupName": "bloco de notas",
+      "pdfPath": "./pdfs/1803_-_Bons_Sacrifcios.pdf"
+    }
+  }
