@@ -76,6 +76,9 @@ app.post('/schedule', upload.single('pdf'), async (req, res) => {
   if (!fs.existsSync(pdfPath)) {
     return res.status(400).json({ success: false, error: 'Arquivo não encontrado.' });
   }
+  
+  const chats = chatName.split(',').map(name => name.trim());
+  const delayBetweenMessages = 10000; // 10 segundos de delay
 
   // Agenda o envio
   const [hour, minute] = time.split(':');
@@ -83,28 +86,41 @@ app.post('/schedule', upload.single('pdf'), async (req, res) => {
 
   cron.schedule(cronTime, async () => {
     try {
-      // Busca o chat pelo nome
-      const chats = await client.getChats();
-      const chat = chats.find(c => c.name === chatName || c.id.user === chatName);
+      for (const chatName of chats) {
+        const targetChat = await findChat(chatName);
+        
+        if (!targetChat) {
+          console.error(`Chat ${chatName} não encontrado`);
+          continue;
+        }
 
-      if (!chat) {
-        throw new Error(`Chat/Grupo "${chatName}" não encontrado.`);
+        const media = MessageMedia.fromFilePath(pdfPath);
+        await targetChat.sendMessage(media, { caption: message });
+        console.log(`Enviado para ${chatName} às ${new Date().toLocaleTimeString()}`);
+        
+        // Aguarda o delay antes do próximo envio
+        await new Promise(resolve => setTimeout(resolve, delayBetweenMessages));
       }
-
-      // Envia o PDF
-      const media = MessageMedia.fromFilePath(pdfPath);
-      await chat.sendMessage(media, { caption: message });
-      console.log(`PDF enviado com sucesso para ${chatName}!`);
-
-      // Remove o arquivo após o envio
-      fs.unlinkSync(pdfPath);
     } catch (error) {
-      console.error('Erro ao enviar PDF:', error);
+      console.error('Erro no processo de envio:', error);
+    } finally {
+      fs.unlinkSync(pdfPath);
     }
   });
 
-  res.json({ success: true, time });
+  res.json({ 
+    success: true, 
+    message: `Agendado para ${chats.length} chats com intervalo de 5s`
+  });
 });
+
+async function findChat(name) {
+  const chats = await client.getChats();
+  return chats.find(c => 
+    c.name === name || 
+    c.id.user === name
+  );
+}
 
 // Inicia o servidor
 const PORT = 3001;
